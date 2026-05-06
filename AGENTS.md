@@ -10,10 +10,10 @@
 
 ```bash
 node server.js              # start dev server → http://127.0.0.1:3210 (localhost only, port hardcoded)
-bash deploy.sh              # deploy to production (scp + systemd restart on 217.160.189.48)
+bash deploy.sh              # deploy to production (scp + systemd restart)
 ```
 
-There are no test, lint, or build commands. Deploy requires SSH access to `root@217.160.189.48` with the `nbc-migration` systemd service configured.
+There are no test, lint, or build commands. Deploy requires SSH access to the production host with the `nbc-migration` systemd service configured.
 
 ## Architecture
 
