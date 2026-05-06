@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NBC Team-Dateien Migration</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #F2F5F9;
+        color: #0F3551;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 20px;
+      }
+
+      .app-container { width: 100%; max-width: 860px; }
+
+      .app-header { text-align: center; margin-bottom: 32px; }
+      .app-logo { display: inline-flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+      .app-logo-icon {
+        width: 48px; height: 48px; background: #2370CB; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-weight: 700; font-size: 20px; letter-spacing: -0.5px;
+      }
+      .app-logo h1 { font-size: 1.6rem; font-weight: 700; color: #0F3551; letter-spacing: -0.5px; }
+      .app-subtitle { font-size: 0.9rem; color: #496A85; margin-top: 4px; }
+
+      .step-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #DBE3EC;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .step-card.step-pending {
+        opacity: 0.45;
+        pointer-events: none;
+      }
+
+      .step-card.step-pending .step-header { cursor: default; }
+
+      .step-card.step-active {
+        border-color: #2370CB;
+        box-shadow: 0 2px 12px rgba(35, 112, 203, 0.12);
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .step-card.step-done {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .step-card.step-done .step-header { cursor: pointer; }
+      .step-card.step-done .step-body { display: none; }
+      .step-card.step-done.step-expanded .step-body { display: block; }
+
+      .step-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 28px;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .step-number {
+        width: 32px; height: 32px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+        background: #EDF2F7; color: #496A85;
+        transition: all 0.3s;
+      }
+
+      .step-active .step-number { background: #2370CB; color: #fff; }
+      .step-done .step-number { background: #48A9A6; color: #fff; }
+
+      .step-title-text {
+        flex: 1; font-weight: 600; font-size: 1rem; color: #0F3551;
+      }
+
+      .step-status {
+        font-size: 0.82rem; font-weight: 500; color: #496A85;
+      }
+
+      .step-active .step-status { color: #2370CB; }
+      .step-done .step-status { color: #48A9A6; }
+
+      .step-body {
+        padding: 0 28px 24px;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .step-connector {
+        width: 2px; height: 16px; background: #DBE3EC;
+        margin: 0 auto; margin-bottom: 16px;
+      }
+
+      .step-connector.step-connector-active { background: #2370CB; }
+      .step-connector.step-connector-done { background: #48A9A6; }
+
+      label {
+        display: block; font-weight: 600; margin-bottom: 6px;
+        font-size: 0.85rem; color: #0F3551;
+      }
+
+      input[type="text"], input[type="url"], input[type="password"] {
+        width: 100%; padding: 10px 14px;
+        border: 1px solid #DBE3EC; border-radius: 10px;
+        font-size: 0.88rem; font-family: 'Inter', -apple-system, sans-serif;
+        color: #0F3551; background: #F8FAFC;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      input:focus {
+        outline: none; border-color: #2370CB;
+        box-shadow: 0 0 0 3px rgba(35, 112, 203, 0.12); background: #fff;
+      }
+      input::placeholder { color: #A0AEC0; }
+
+      .hint {
+        font-size: 0.78rem; color: #496A85;
+        margin: 6px 0 14px; line-height: 1.5;
+      }
+      .hint a { color: #2370CB; text-decoration: none; font-weight: 500; }
+      .hint a:hover { text-decoration: underline; }
+
+      .row { display: flex; gap: 16px; flex-wrap: wrap; }
+      .row > * { flex: 1; min-width: 200px; }
+
+      .toolbar {
+        display: flex; gap: 10px; margin: 14px 0;
+        align-items: center; flex-wrap: wrap;
+      }
+
+      button {
+        padding: 10px 22px; border: none; border-radius: 10px;
+        cursor: pointer; font-size: 0.88rem; font-weight: 600;
+        font-family: 'Inter', -apple-system, sans-serif;
+        transition: all 0.2s; display: inline-flex;
+        align-items: center; gap: 6px;
+      }
+      button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+      .btn-primary { background: #2370CB; color: #fff; }
+      .btn-primary:hover:not(:disabled) { background: #1B5FB5; box-shadow: 0 2px 8px rgba(35, 112, 203, 0.3); }
+      .btn-success { background: #48A9A6; color: #fff; }
+      .btn-success:hover:not(:disabled) { background: #3D9491; box-shadow: 0 2px 8px rgba(72, 169, 166, 0.3); }
+      .btn-danger { background: #E05252; color: #fff; }
+      .btn-danger:hover:not(:disabled) { background: #C94444; }
+      .btn-outline { background: transparent; color: #496A85; border: 1px solid #DBE3EC; }
+      .btn-outline:hover:not(:disabled) { background: #F2F5F9; border-color: #B0BEC5; }
+      .btn-sm { padding: 7px 14px; font-size: 0.82rem; border-radius: 8px; }
+
+      .tag {
+        display: inline-flex; align-items: center;
+        padding: 4px 12px; border-radius: 20px;
+        font-size: 0.78rem; font-weight: 600; gap: 4px;
+      }
+      .tag-ok { background: #E6F7F6; color: #2D8A87; }
+      .tag-fail { background: #FDE8E8; color: #C94444; }
+      .tag-unknown { background: #EDF2F7; color: #496A85; }
+
+      .browse-path {
+        font-size: 0.82rem; color: #496A85; margin: 10px 0;
+        font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+        background: #F8FAFC; padding: 8px 14px;
+        border-radius: 8px; border: 1px solid #DBE3EC;
+      }
+
+      .folder-list {
+        max-height: 420px; overflow-y: auto;
+        border: 1px solid #DBE3EC; border-radius: 12px; overflow-x: hidden;
+      }
+
+      .folder-item {
+        padding: 12px 16px; cursor: pointer;
+        border-bottom: 1px solid #EDF2F7;
+        display: flex; align-items: center; gap: 10px;
+        font-size: 0.9rem; transition: background 0.15s;
+      }
+      .folder-item:last-child { border-bottom: none; }
+      .folder-item:hover { background: #F0F7FF; }
+      .folder-item .file-size {
+        color: #496A85; font-size: 0.78rem;
+        font-family: 'JetBrains Mono', 'SF Mono', monospace;
+      }
+
+      .progress-bar {
+        background: #EDF2F7; border-radius: 8px;
+        height: 8px; overflow: hidden; margin: 12px 0;
+      }
+      .progress-bar-fill {
+        background: linear-gradient(90deg, #2370CB, #48A9A6);
+        height: 100%; transition: width 0.4s ease; border-radius: 8px;
+      }
+
+      .room-link {
+        margin-top: 16px; padding: 14px 18px;
+        background: #E6F7F6; border: 1px solid #B2E0DE;
+        border-radius: 12px; font-size: 0.88rem; word-break: break-all;
+      }
+      .room-link a { color: #2D8A87; font-weight: 600; text-decoration: none; }
+      .room-link a:hover { text-decoration: underline; }
+
+      .log-container {
+        background: #0F3551; color: #C8D6E5; padding: 20px;
+        border-radius: 12px;
+        font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+        font-size: 0.78rem; height: 280px; overflow-y: auto;
+        white-space: pre-wrap; word-break: break-all; line-height: 1.6;
+      }
+      .log-info { color: #7EB6F7; }
+      .log-success { color: #6DD4D1; }
+      .log-error { color: #F09696; }
+      .log-warn { color: #F7C97E; }
+
+      .hidden { display: none; }
+
+      .file-tree {
+        font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+        font-size: 0.82rem; line-height: 1.7; color: #0F3551;
+        padding: 16px; background: #F8FAFC;
+        border-radius: 10px; border: 1px solid #DBE3EC;
+      }
+      .file-tree strong { color: #2370CB; }
+
+      .empty-state {
+        padding: 20px; color: #496A85;
+        text-align: center; font-size: 0.88rem;
+      }
+
+      .divider { height: 1px; background: #DBE3EC; margin: 20px 0; }
+
+      .log-card {
+        background: #FFFFFF; border-radius: 16px;
+        border: 1px solid #DBE3EC; padding: 24px;
+        margin-top: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+      .log-card-title {
+        font-size: 0.92rem; font-weight: 600; color: #496A85;
+        margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <div class="app-header">
+        <div class="app-logo">
+          <div class="app-logo-icon">TM</div>
+          <h1>Team-Dateien Migration</h1>
+        </div>
+        <p class="app-subtitle">Nextcloud &amp; Alte Dateienablage → NBC Raum</p>
+      </div>
+
+      <div id="step1" class="step-card step-active">
+        <div class="step-header" onclick="toggleStep(1)">
+          <div class="step-number">1</div>
+          <div class="step-title-text">Nextcloud-Verbindung</div>
+          <div id="step1status" class="step-status"></div>
+        </div>
+        <div class="step-body">
+          <div class="row">
+            <div>
+              <label for="ncUser">Benutzername</label>
+              <input type="text" id="ncUser" placeholder="Dein Nextcloud-Username" />
+            </div>
+            <div>
+              <label for="ncPass">App-Passwort</label>
+              <input type="password" id="ncPass" placeholder="xxxx-xxxx-xxxx-xxxx" />
+            </div>
+          </div>
+          <div class="hint" style="margin-top: 8px">
+            App-Passwort erstellen:
+            <a href="https://nextcloud.niedersachsen.cloud/index.php/settings/user/security" target="_blank" rel="noopener">
+              nextcloud.niedersachsen.cloud/settings/user/security
+            </a>
+            → "Neues App-Passwort erstellen"
+          </div>
+          <div class="toolbar">
+            <button class="btn-primary" onclick="testNextcloud()">Verbinden</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-connector" id="conn1"></div>
+
+      <div id="step2" class="step-card step-pending">
+        <div class="step-header" onclick="toggleStep(2)">
+          <div class="step-number">2</div>
+          <div class="step-title-text">NBC & Ziel-Raum</div>
+          <div id="step2status" class="step-status"></div>
+        </div>
+        <div class="step-body">
+          <div class="row">
+            <div>
+              <label for="jwt">JWT Token</label>
+              <input type="text" id="jwt" placeholder="eyJhbGci..." />
+              <div class="hint">Browser DevTools → Application → Local Storage</div>
+            </div>
+            <div>
+              <label for="roomId">Raum-ID oder Raum-URL <span style="font-weight: normal; color: #496A85">(leer = neuer Raum)</span></label>
+              <input type="text" id="roomId" placeholder="69e8b3fc... oder leer lassen" />
+              <div class="hint">Leer lassen → es wird automatisch ein neuer Raum erstellt</div>
+            </div>
+          </div>
+          <div class="toolbar">
+            <button class="btn-primary" onclick="validateJwt()">Weiter</button>
+          </div>
+          <div id="roomLinkBox" class="room-link hidden"></div>
+        </div>
+      </div>
+
+      <div class="step-connector" id="conn2"></div>
+
+      <div id="step3" class="step-card step-pending">
+        <div class="step-header" onclick="toggleStep(3)">
+          <div class="step-number">3</div>
+          <div class="step-title-text">Ordner auswählen & migrieren</div>
+          <div id="step3status" class="step-status"></div>
+        </div>
+        <div class="step-body">
+          <p class="hint" style="margin-top: -8px; margin-bottom: 14px">
+            Team-Ordner (z.B. "Robotik (5e6f7da4...)") werden automatisch erkannt — NC + alte Dateien werden zusammen migriert.
+          </p>
+          <div class="browse-path" id="currentPath">/</div>
+          <div class="toolbar">
+            <button class="btn-sm btn-outline" onclick="ncBrowseUp()">Zurück</button>
+            <button class="btn-sm btn-outline" onclick="ncBrowseRoot()">Root</button>
+          </div>
+          <div class="folder-list" id="folderList"></div>
+          <div id="filesSection" class="hidden" style="margin-top: 16px">
+            <div class="divider"></div>
+            <div class="toolbar">
+              <span id="fileCount" style="font-size: 0.85rem; color: #496A85"></span>
+              <button class="btn-success" id="btnMigrate" onclick="startMigration()">Raum migrieren</button>
+            </div>
+            <div id="fileList"></div>
+            <div class="progress-bar hidden" id="progressBarContainer">
+              <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
+            </div>
+            <div id="progressText" style="font-size: 0.82rem; color: #496A85; margin-top: 6px"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-connector" id="conn3"></div>
+      <div id="roomLinkSummary" class="step-card step-done hidden">
+        <div class="step-header">
+          <div class="step-number" style="background:#48A9A6;color:#fff;">4</div>
+          <div class="step-title-text">Ziel-Raum</div>
+        </div>
+        <div class="step-body" style="display:block;">
+          <div id="roomLinkSummaryUrl" style="font-size:0.85rem;margin-top:8px;"></div>
+        </div>
+      </div>
+
+      <div class="log-card">
+        <div class="log-card-title">
+          <span>Log</span>
+          <button class="btn-sm btn-outline" onclick="clearLog()">Löschen</button>
+        </div>
+        <div id="log" class="log-container"></div>
+      </div>
+    </div>
+
+    <script>
+      const S = {
+        jwt: "",
+        baseUrl: "https://niedersachsen.cloud",
+        roomId: "",
+        filesStorageUrl: "",
+        schoolId: "",
+        boardId: null,
+        columnId: null,
+        files: [],
+        ncConnected: false,
+        jwtValidated: false,
+        ncBase: "https://nextcloud.niedersachsen.cloud",
+        ncUser: "",
+        ncPass: "",
+        currentNcPath: "",
+        currentDavPath: "",
+      };
+
+      let browseItems = [];
+
+      function setStepState(n, state, statusText) {
+        const card = document.getElementById("step" + n);
+        card.className = "step-card step-" + state;
+        if (statusText !== undefined) {
+          document.getElementById("step" + n + "status").textContent = statusText;
+        }
+        for (let i = 1; i <= 3; i++) {
+          const conn = document.getElementById("conn" + i);
+          if (!conn) continue;
+          const prev = document.getElementById("step" + i);
+          if (prev.classList.contains("step-done")) conn.className = "step-connector step-connector-done";
+          else if (prev.classList.contains("step-active")) conn.className = "step-connector step-connector-active";
+          else conn.className = "step-connector";
+        }
+      }
+
+      function toggleStep(n) {
+        const card = document.getElementById("step" + n);
+        if (card.classList.contains("step-done")) {
+          card.classList.toggle("step-expanded");
+        }
+      }
+
+      function log(m, l = "info") {
+        const e = document.getElementById("log"),
+          d = document.createElement("div");
+        d.className = "log-" + l;
+        d.textContent = "[" + new Date().toLocaleTimeString() + "] " + m;
+        e.appendChild(d);
+        e.scrollTop = e.scrollHeight;
+      }
+      function clearLog() { document.getElementById("log").innerHTML = ""; }
+      function showRoomLinkSummary() {
+        if (!S.roomId) return;
+        const roomUrl = S.baseUrl + "/rooms/" + S.roomId;
+        const el = document.getElementById("roomLinkSummary");
+        el.classList.remove("hidden");
+        document.getElementById("roomLinkSummaryUrl").innerHTML = '<a href="' + esc(roomUrl) + '" target="_blank" style="color:#2D8A87;font-weight:600;text-decoration:none;">' + esc(roomUrl) + '</a>';
+      }
+      function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+      function fmtSize(b) {
+        if (!b) return "?";
+        if (b < 1024) return b + " B";
+        if (b < 1048576) return (b / 1024).toFixed(1) + " KB";
+        return (b / 1048576).toFixed(1) + " MB";
+      }
+      function davRoot() { return "/remote.php/dav/files/" + encodeURIComponent(S.ncUser) + "/"; }
+      function extractId(s) { if (!s) return ""; const m = s.match(/([0-9a-f]{24})/i); return m ? m[1] : ""; }
+      function displayPath(davHref) {
+        const root = davRoot();
+        const rel = davHref.startsWith(root) ? davHref.slice(root.length) : davHref;
+        return decodeURIComponent(rel).replace(/\/$/, "");
+      }
+
+      async function nbcApi(path, opts = {}) {
+        const base = S.baseUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+        const url = "/proxy/nbc-custom/" + encodeURIComponent("https://" + base) + path;
+        const h = { Authorization: "Bearer " + S.jwt };
+        if (opts.headers) Object.assign(h, opts.headers);
+        delete h.host;
+        const r = await fetch(url, { ...opts, headers: h });
+        if (!r.ok) { const t = await r.text().catch(() => ""); throw new Error(r.status + ": " + t.substring(0, 300)); }
+        const ct = r.headers.get("content-type");
+        if (ct && ct.includes("application/json")) return r.json();
+        return r;
+      }
+
+      async function ncApi(path, opts = {}) {
+        if (!S.ncBase || !S.ncUser || !S.ncPass) throw new Error("Nextcloud nicht verbunden");
+        const pb = "/proxy/nc/" + encodeURIComponent(S.ncBase);
+        let tp;
+        if (path.startsWith("http")) { const u = new URL(path); tp = u.pathname + u.search; } else tp = path;
+        const h = { Authorization: "Basic " + btoa(S.ncUser + ":" + S.ncPass) };
+        if (opts.headers) Object.assign(h, opts.headers);
+        delete h.host;
+        const r = await fetch(pb + tp, { ...opts, headers: h });
+        if (!r.ok) { const t = await r.text().catch(() => ""); throw new Error("NC " + r.status + ": " + t.substring(0, 200)); }
+        return r;
+      }
+
+      async function testNextcloud() {
+        const btn = event.target.closest("button");
+        btn.disabled = true;
+        S.ncUser = document.getElementById("ncUser").value.trim();
+        S.ncPass = document.getElementById("ncPass").value.trim();
+        try {
+          log("Initialisiere Nextcloud-Session...");
+          const authHeaders = {
+            Authorization: "Basic " + btoa(S.ncUser + ":" + S.ncPass),
+            "OCS-APIRequest": "true", Accept: "application/json",
+          };
+          const initUrl = "/proxy/nc-init/" + encodeURIComponent(S.ncBase) + "/ocs/v1.php/cloud/user?format=json";
+          await fetch(initUrl, { headers: authHeaders });
+          await ncApi("/ocs/v1.php/cloud/user?format=json", { headers: authHeaders });
+          const r = await ncApi("/ocs/v1.php/cloud/user?format=json", { headers: authHeaders });
+          const d = await r.json();
+          const uid = d?.ocs?.data?.id;
+          if (uid) S.ncUser = uid;
+          S.ncConnected = true;
+          log("Nextcloud verbunden: " + uid, "success");
+          setStepState(1, "done", "Verbunden als " + uid);
+          setStepState(2, "active", "");
+        } catch (e) {
+          S.ncConnected = false;
+          log("NC Fehler: " + e.message, "error");
+          setStepState(1, "active", "Fehler — erneut versuchen");
+        }
+        btn.disabled = false;
+      }
+
+      async function validateJwt() {
+        const jwt = document.getElementById("jwt").value.trim();
+        if (!jwt) { alert("Bitte JWT Token eingeben"); return; }
+        const btn = event.target.closest("button");
+        btn.disabled = true;
+        try {
+          S.jwt = jwt;
+          const payload = JSON.parse(atob(jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+          if (!payload.schoolId) throw new Error("Keine schoolId im JWT");
+          S.schoolId = payload.schoolId;
+          S.filesStorageUrl = S.baseUrl;
+          S.jwtValidated = true;
+          log("JWT gültig — schoolId: " + S.schoolId, "success");
+          setStepState(2, "done", "JWT gültig");
+          setStepState(3, "active", "");
+          await ncBrowseRoot();
+        } catch (e) {
+          S.jwtValidated = false;
+          log("JWT Fehler: " + e.message, "error");
+          setStepState(2, "active", "Ungültig — erneut eingeben");
+        }
+        btn.disabled = false;
+      }
+
+      async function setColumnTitle(columnId, title) {
+        await nbcApi("/api/v3/columns/" + columnId + "/title", {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title }),
+        }).catch((e) => log("Spalte-Titel '" + title + "': " + e.message, "warn"));
+      }
+
+      async function ncBrowse(davPath) {
+        if (!S.ncConnected) return;
+        S.currentDavPath = davPath;
+        S.currentNcPath = displayPath(davPath);
+        document.getElementById("currentPath").textContent = "/" + S.currentNcPath;
+        setStepState(3, "active", "");
+        try {
+          const r = await ncApi(davPath, {
+            method: "PROPFIND", headers: { Depth: "1", Accept: "application/xml" },
+          });
+          renderFolderList(await r.text(), davPath);
+        } catch (e) {
+          if (e.message && e.message.includes("412")) {
+            log("NC-Session abgelaufen, re-initialisiere...", "warn");
+            try {
+              const authHeaders = {
+                Authorization: "Basic " + btoa(S.ncUser + ":" + S.ncPass),
+                "OCS-APIRequest": "true", Accept: "application/json",
+              };
+              const initUrl = "/proxy/nc-init/" + encodeURIComponent(S.ncBase) + "/ocs/v1.php/cloud/user?format=json";
+              await fetch(initUrl, { headers: authHeaders });
+              await ncApi("/ocs/v1.php/cloud/user?format=json", { headers: authHeaders });
+              await ncApi("/ocs/v1.php/cloud/user?format=json", { headers: authHeaders });
+              log("NC-Session erneuert", "success");
+              const r2 = await ncApi(davPath, {
+                method: "PROPFIND", headers: { Depth: "1", Accept: "application/xml" },
+              });
+              renderFolderList(await r2.text(), davPath);
+            } catch (e2) {
+              log("NC Re-Init fehlgeschlagen: " + e2.message, "error");
+            }
+          } else {
+            log("NC Fehler: " + e.message, "error");
+          }
+        }
+      }
+
+      function renderFolderList(xml, basePath) {
+        const doc = new DOMParser().parseFromString(xml, "application/xml");
+        const responses = doc.querySelectorAll("response");
+        const items = [];
+        responses.forEach((r) => {
+          const href = r.querySelector("href")?.textContent || "";
+          const isDir = r.querySelector("propstat>prop>resourcetype>collection") !== null;
+          const name = decodeURIComponent(href.split("/").filter(Boolean).pop() || "");
+          const size = r.querySelector("propstat>prop>getcontentlength")?.textContent;
+          if (href === basePath || href === basePath + "/" || !name || name.startsWith(".")) return;
+          items.push({ href, name, isDir, size: size ? parseInt(size) : null });
+        });
+        log("PROPFIND " + basePath + " → " + responses.length + " responses, " + items.length + " items");
+        const c = document.getElementById("folderList");
+        browseItems = items;
+        if (!items.length) {
+          c.innerHTML = '<div class="empty-state">Ordner ist leer</div>';
+          c.onclick = null;
+          return;
+        }
+        items.sort((a, b) => (a.isDir ? 0 : 1) - (b.isDir ? 0 : 1) || a.name.localeCompare(b.name));
+        let h = "";
+        items.forEach((item, idx) => {
+          if (item.isDir) {
+            h += '<div class="folder-item" data-idx="' + idx + '"><span>\u{1F4C1}</span> <span style="flex:1">' + esc(item.name) + '</span> <button class="btn-sm btn-success" data-migrate="' + idx + '">Raum migrieren</button></div>';
+          } else {
+            h += '<div class="folder-item"><span>\u{1F4C4}</span> <span style="flex:1">' + esc(item.name) + '</span> <span class="file-size">' + fmtSize(item.size) + '</span></div>';
+          }
+        });
+        c.innerHTML = h;
+        c.onclick = (e) => {
+          const migBtn = e.target.closest("[data-migrate]");
+          if (migBtn) {
+            e.stopPropagation();
+            const item = browseItems[parseInt(migBtn.dataset.migrate)];
+            selectAndMigrate(item.href);
+            return;
+          }
+          const row = e.target.closest("[data-idx]");
+          if (row) { const item = browseItems[parseInt(row.dataset.idx)]; if (item && item.isDir) ncBrowse(item.href); }
+        };
+      }
+
+      function ncBrowseUp() {
+        if (!S.currentDavPath) return ncBrowseRoot();
+        const parts = S.currentDavPath.replace(/\/+$/, "").split("/");
+        parts.pop();
+        const parent = parts.join("/") + "/";
+        if (parent.length <= davRoot().length) return ncBrowseRoot();
+        ncBrowse(parent);
+      }
+      function ncBrowseRoot() { ncBrowse(davRoot()); }
+
+      let ncTree = null, legacyTree = null, detectedTeamId = null;
+      let totalFiles = 0, migratedFiles = 0, errorFiles = 0;
+
+      async function selectAndMigrate(davHref) {
+        if (!S.ncConnected) { alert("Zuerst Nextcloud verbinden"); return; }
+        S.jwt = document.getElementById("jwt").value.trim();
+        if (!S.jwt) { alert("JWT Token eingeben"); return; }
+        S.boardId = null; S.columnId = null;
+        ncTree = null; legacyTree = null; detectedTeamId = null;
+        totalFiles = 0; migratedFiles = 0; errorFiles = 0;
+
+        const folderName = displayPath(davHref).split("/").filter(Boolean).pop() || "";
+        detectedTeamId = extractId(folderName);
+
+        log("Scanne NC-Ordnerstruktur /" + displayPath(davHref) + "...");
+        try {
+          ncTree = await loadNcTree(davHref);
+          const ncFileCount = countTreeFiles(ncTree);
+          const ncDirCount = countTreeDirs(ncTree);
+          log(ncFileCount + " NC-Dateien in " + ncDirCount + " Ordnern gefunden", "success");
+          totalFiles += ncFileCount;
+
+          if (detectedTeamId) {
+            log("Team-ID erkannt: " + detectedTeamId + " → scanne auch alte Dateien...");
+            try {
+              if (!S.schoolId) {
+                const payload = JSON.parse(atob(S.jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+                S.schoolId = payload.schoolId;
+              }
+              legacyTree = await legacyScanDir(detectedTeamId, null, 0);
+              const legFileCount = legacyCountFiles(legacyTree);
+              const legDirCount = legacyCountDirs(legacyTree);
+              log(legFileCount + " alte Dateien in " + legDirCount + " Ordnern gefunden", "success");
+              totalFiles += legFileCount;
+            } catch (e) { log("Legacy-Scan übersprungen: " + e.message, "warn"); legacyTree = null; }
+          } else {
+            log("Keine Team-ID im Ordnernamen erkannt – nur NC-Migration", "info");
+          }
+
+          if (totalFiles === 0) { alert("Keine Dateien gefunden"); return; }
+
+          if (!S.schoolId) {
+            const payload = JSON.parse(atob(S.jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+            S.schoolId = payload.schoolId;
+          }
+          S.filesStorageUrl = S.baseUrl;
+
+          document.getElementById("filesSection").classList.remove("hidden");
+          document.getElementById("fileCount").textContent =
+            totalFiles + " Dateien gesamt (NC: " + countTreeFiles(ncTree) + (legacyTree ? ", Legacy: " + legacyCountFiles(legacyTree) : "") + ")";
+          renderTreePreview();
+          setStepState(3, "active", "Migration läuft...");
+          await startMigration();
+        } catch (e) { log("Fehler: " + e.message, "error"); }
+      }
+
+      async function loadNcTree(davHref, depth = 0) {
+        if (depth > 15) return { name: "", files: [], dirs: [] };
+        const r = await ncApi(davHref, { method: "PROPFIND", headers: { Depth: "1", Accept: "application/xml" } });
+        const doc = new DOMParser().parseFromString(await r.text(), "application/xml");
+        const files = [], dirHrefs = [];
+        for (const resp of doc.querySelectorAll("response")) {
+          const href = resp.querySelector("href")?.textContent || "";
+          const isDir = resp.querySelector("propstat>prop>resourcetype>collection") !== null;
+          const name = decodeURIComponent(href.split("/").filter(Boolean).pop() || "");
+          if (href === davHref || href === davHref + "/" || !name || name.startsWith(".")) continue;
+          if (isDir) { dirHrefs.push({ href, name }); } else {
+            const size = resp.querySelector("propstat>prop>getcontentlength")?.textContent;
+            const type = resp.querySelector("propstat>prop>getcontenttype")?.textContent || "";
+            files.push({ href, name, size: size ? parseInt(size) : null, type, status: "pending" });
+          }
+        }
+        const dirs = [];
+        for (const d of dirHrefs) { const sub = await loadNcTree(d.href, depth + 1); sub.name = d.name; dirs.push(sub); }
+        return { name: "", files, dirs };
+      }
+
+      function countTreeFiles(node) { return node.files.length + node.dirs.reduce((s, d) => s + countTreeFiles(d), 0); }
+      function countTreeDirs(node) { return node.dirs.length + node.dirs.reduce((s, d) => s + countTreeDirs(d), 0); }
+
+      function renderTreePreview() {
+        const c = document.getElementById("fileList");
+        function renderTree(node, indent) {
+          let h = "";
+          for (const f of node.files) h += indent + "\u{1F4C4} " + esc(f.name) + ' <span style="color:#496A85">(' + fmtSize(f.size) + ")</span><br>";
+          for (const d of node.dirs) { h += indent + "\u{1F4C1} <strong>" + esc(d.name) + "</strong><br>"; h += renderTree(d, indent + "&nbsp;&nbsp;"); }
+          return h;
+        }
+        let h = '<div class="file-tree">';
+        if (ncTree && countTreeFiles(ncTree) > 0) {
+          h += "<strong>Board: Nextcloud-Dateien</strong><br>";
+          if (ncTree.files.length > 0) h += "\u{1F4CB} <strong>Spalte: Hauptordner</strong> (" + ncTree.files.length + " Dateien)<br>";
+          for (const d of ncTree.dirs) { h += "\u{1F4CB} <strong>Spalte: " + esc(d.name) + "</strong> (" + countTreeFiles(d) + " Dateien)<br>"; h += renderTree(d, "&nbsp;&nbsp;"); }
+        }
+        if (legacyTree && legacyCountFiles(legacyTree) > 0) {
+          h += "<br><strong>Board: Alte Dateienablage</strong><br>";
+          if (legacyTree.files.length > 0) h += "\u{1F4CB} <strong>Spalte: Hauptordner</strong> (" + legacyTree.files.length + " Dateien)<br>";
+          for (const d of legacyTree.dirs) { h += "\u{1F4CB} <strong>Spalte: " + esc(d.name) + "</strong> (" + legacyCountFiles(d) + " Dateien)<br>"; h += renderTree(d, "&nbsp;&nbsp;"); }
+        }
+        h += "</div>";
+        c.innerHTML = h;
+      }
+
+      async function startMigration() {
+        if (!ncTree && !legacyTree) return;
+        const rawRoomId = extractId(document.getElementById("roomId").value.trim());
+        const btn = document.getElementById("btnMigrate");
+        btn.disabled = true;
+        document.getElementById("progressBarContainer").classList.remove("hidden");
+
+        try {
+          if (!rawRoomId) {
+            const folderName = S.currentNcPath.split("/").filter(Boolean).pop() || "Migrierte Dateien";
+            log("Erstelle Raum...");
+            const room = await nbcApi("/api/v3/rooms", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: folderName, color: "blue-grey", features: [] }),
+            });
+            S.roomId = room.id;
+            const roomUrl = S.baseUrl + "/rooms/" + S.roomId;
+            log("Raum: " + roomUrl, "success");
+            document.getElementById("roomId").value = S.roomId;
+            const box = document.getElementById("roomLinkBox");
+            box.classList.remove("hidden");
+            box.innerHTML = 'Raum: <a href="' + esc(roomUrl) + '" target="_blank">' + esc(roomUrl) + "</a>";
+            showRoomLinkSummary();
+          } else {
+            S.roomId = rawRoomId;
+            log("Verwende Raum: " + S.roomId);
+            showRoomLinkSummary();
+          }
+
+          if (ncTree && countTreeFiles(ncTree) > 0) { log("=== Board: Nextcloud-Dateien ==="); await migrateNcFiles(); }
+          if (legacyTree && legacyCountFiles(legacyTree) > 0) { log("=== Board: Alte Dateienablage ==="); await migrateLegacyFiles(); }
+
+          document.getElementById("progressBar").style.width = "100%";
+          document.getElementById("progressText").textContent =
+            totalFiles + " Dateien (" + migratedFiles + " OK, " + errorFiles + " Fehler)";
+          log("Fertig: " + migratedFiles + " OK, " + errorFiles + " Fehler", migratedFiles > 0 ? "success" : "error");
+          setStepState(3, "done", migratedFiles + " OK, " + errorFiles + " Fehler");
+        } catch (e) {
+          log("Migration Fehler: " + e.message, "error");
+        }
+        btn.disabled = false;
+        const box = document.getElementById("roomLinkBox");
+        box.classList.remove("hidden");
+        const roomUrl = S.baseUrl + "/rooms/" + S.roomId;
+        box.innerHTML = 'Raum: <a href="' + esc(roomUrl) + '" target="_blank">' + esc(roomUrl) + "</a>";
+        showRoomLinkSummary();
+      }
+
+      async function migrateNcFiles() {
+        const board = await nbcApi("/api/v3/boards", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: "Nextcloud-Dateien", parentId: S.roomId, parentType: "room", layout: "columns" }),
+        });
+        const boardId = board.id;
+        log("Board: " + boardId, "success");
+        let sk = await nbcApi("/api/v3/boards/" + boardId);
+        let overviewColId = sk.columns?.[0]?.id || sk.children?.[0]?.id;
+        if (!overviewColId) { const c = await nbcApi("/api/v3/boards/" + boardId + "/columns", { method: "POST" }); overviewColId = c.id; }
+        await setColumnTitle(overviewColId, "\u{00DC}bersicht");
+        const registry = {};
+        if (ncTree.files.length > 0) {
+          const col = await nbcApi("/api/v3/boards/" + boardId + "/columns", { method: "POST" });
+          await setColumnTitle(col.id, "Hauptordner");
+          await uploadFolderCard(ncTree, col.id, registry, "nc");
+        }
+        for (const d of ncTree.dirs) {
+          const col = await nbcApi("/api/v3/boards/" + boardId + "/columns", { method: "POST" });
+          await setColumnTitle(col.id, d.name);
+          log("Spalte: " + d.name);
+          await processFolderFlat(d, col.id, registry, "nc");
+        }
+        const rootFolderName = S.currentNcPath.split("/").filter(Boolean).pop() || "Nextcloud-Dateien";
+        const ovCard = await createOverviewCard(registry, rootFolderName, overviewColId, boardId);
+        if (ovCard) {
+          await nbcApi("/api/v3/cards/" + ovCard + "/position", {
+            method: "PUT", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ toColumnId: overviewColId, toPosition: 0 }),
+          });
+        }
+      }
+
+      async function migrateLegacyFiles() {
+        const board = await nbcApi("/api/v3/boards", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: "Alte Dateienablage", parentId: S.roomId, parentType: "room", layout: "columns" }),
+        });
+        const boardId = board.id;
+        log("Board: " + boardId, "success");
+        let sk = await nbcApi("/api/v3/boards/" + boardId);
+        let overviewColId = sk.columns?.[0]?.id || sk.children?.[0]?.id;
+        if (!overviewColId) { const c = await nbcApi("/api/v3/boards/" + boardId + "/columns", { method: "POST" }); overviewColId = c.id; }
+        await setColumnTitle(overviewColId, "\u{00DC}bersicht");
+        const registry = {};
+        if (legacyTree.files.length > 0) {
+          const col = await nbcApi("/api/v3/boards/" + boardId + "/columns", { method: "POST" });
+          await setColumnTitle(col.id, "Hauptordner");
+          await uploadFolderCard(legacyTree, col.id, registry, "legacy");
+        }
+        for (const d of legacyTree.dirs) {
+          const col = await nbcApi("/api/v3/boards/" + boardId + "/columns", { method: "POST" });
+          await setColumnTitle(col.id, d.name);
+          log("Spalte: " + d.name);
+          await processFolderFlat(d, col.id, registry, "legacy");
+        }
+        const ovCard = await createOverviewCard(registry, "Alte Dateienablage", overviewColId, boardId);
+        if (ovCard) {
+          await nbcApi("/api/v3/cards/" + ovCard + "/position", {
+            method: "PUT", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ toColumnId: overviewColId, toPosition: 0 }),
+          });
+        }
+      }
+
+      async function uploadFolderCard(node, columnId, registry, source) {
+        const card = await nbcApi("/api/v3/columns/" + columnId + "/cards", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ requiredEmptyElements: ["fileFolder"] }),
+        });
+        const title = node.name || "Dateien";
+        await nbcApi("/api/v3/cards/" + card.id + "/title", {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title }),
+        }).catch(() => {});
+        const folderEl = card.elements?.find((e) => e.type === "fileFolder");
+        if (folderEl) {
+          await nbcApi("/api/v3/elements/" + folderEl.id + "/content", {
+            method: "PATCH", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ data: { type: "fileFolder", content: { title } } }),
+          }).catch(() => {});
+        }
+        log("Karte: " + title + " (" + node.files.length + " Dateien)");
+        const uploadTargetId = folderEl ? folderEl.id : null;
+
+        for (let i = 0; i < node.files.length; i++) {
+          const f = node.files[i];
+          f.status = "migrating";
+          const fileIdx = migratedFiles + errorFiles + 1;
+          try {
+            log("  [" + fileIdx + "/" + totalFiles + "] " + f.name + " (" + fmtSize(f.size) + ")...");
+            let blob;
+            if (source === "legacy") { blob = await legacyDownloadFile(f.fileId, f.name); }
+            else { const r = await ncApi(f.href); if (!r.ok) throw new Error("Download: " + r.status); blob = await r.blob(); }
+            let boardNodeId;
+            if (uploadTargetId) { boardNodeId = uploadTargetId; }
+            else {
+              const el = await nbcApi("/api/v3/cards/" + card.id + "/elements", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type: "file", toPosition: i }),
+              });
+              boardNodeId = el.id;
+            }
+            const fsBase = S.baseUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+            const upUrl = "/proxy/nbc-custom/" + encodeURIComponent("https://" + fsBase) + "/api/v3/file/upload/school/" + S.schoolId + "/boardnodes/" + boardNodeId;
+
+            const MAX_RETRIES = 3;
+            let lastErr = null;
+            for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+              try {
+                const fd = new FormData(); fd.append("file", blob, f.name);
+                const up = await fetch(upUrl, { method: "POST", headers: { Authorization: "Bearer " + S.jwt }, body: fd });
+                if (!up.ok) {
+                  const t = await up.text().catch(() => "");
+                  const err = new Error("Upload " + up.status + ": " + t.substring(0, 150));
+                  if ((up.status === 504 || up.status === 502 || up.status === 503) && attempt < MAX_RETRIES) {
+                    const wait = attempt * 10;
+                    log("[Retry " + attempt + "/" + MAX_RETRIES + "] " + f.name + " — warte " + wait + "s...", "warn");
+                    await new Promise(r => setTimeout(r, wait * 1000));
+                    lastErr = err; continue;
+                  }
+                  throw err;
+                }
+                lastErr = null; break;
+              } catch (retryErr) {
+                if (attempt < MAX_RETRIES && retryErr.message && /^[45]\d\d/.test(retryErr.message)) {
+                  const wait = attempt * 10;
+                  log("[Retry " + attempt + "/" + MAX_RETRIES + "] " + f.name + " — warte " + wait + "s...", "warn");
+                  await new Promise(r => setTimeout(r, wait * 1000));
+                  lastErr = retryErr; continue;
+                }
+                lastErr = retryErr; break;
+              }
+            }
+            if (lastErr) throw lastErr;
+            f.status = "done"; migratedFiles++;
+            log("[OK] " + f.name, "success");
+          } catch (e) { f.status = "error"; errorFiles++; log("[FEHLER] " + f.name + ": " + e.message, "error"); }
+          document.getElementById("progressBar").style.width = Math.round(((migratedFiles + errorFiles) / totalFiles) * 100) + "%";
+          document.getElementById("progressText").textContent = migratedFiles + errorFiles + "/" + totalFiles + " (" + migratedFiles + " OK, " + errorFiles + " Fehler)";
+        }
+      }
+
+      async function processFolderFlat(node, columnId, registry, source) {
+        await uploadFolderCard(node, columnId, registry, source);
+        for (const d of node.dirs) await processFolderFlat(d, columnId, registry, source);
+      }
+
+      async function createOverviewCard(registry, rootFolderName, overviewColId, boardId) {
+        const card = await nbcApi("/api/v3/columns/" + overviewColId + "/cards", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ requiredEmptyElements: ["richText"] }),
+        });
+        await nbcApi("/api/v3/cards/" + card.id + "/title", {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: "\u{1F4CB} " + rootFolderName }),
+        }).catch(() => {});
+        const rtEl = card.elements?.find((e) => e.type === "richText");
+        if (!rtEl) { log("Kein richText-Element", "warn"); return card.id; }
+        const tree = ncTree || legacyTree;
+        const html = buildOverviewHtml(tree);
+        await nbcApi("/api/v3/elements/" + rtEl.id + "/content", {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data: { type: "richText", content: { text: html, inputFormat: "richTextCk5" } } }),
+        }).catch((e) => log("Overview richText: " + e.message, "warn"));
+        log("\u{00DC}bersichtskarte erstellt", "success");
+        return card.id;
+      }
+
+      function cardLink(boardId, cardId, label) {
+        const url = S.baseUrl + "/boards/" + boardId + "#card-" + cardId;
+        return '<a href="' + escHtml(url) + '">\u{1F4C1} ' + escHtml(label) + "</a>";
+      }
+
+      function buildOverviewHtml(node) {
+        let html = "";
+        if (node.files.length > 0) { html += "<p><strong>\u{1F4C1} Hauptordner</strong></p>"; for (const f of node.files) html += "<p>-- \u{1F4C4} " + escHtml(f.name) + " (" + fmtSize(f.size) + ")</p>"; }
+        for (const d of node.dirs) html += buildFolderOverviewHtml(d, 0);
+        return html;
+      }
+
+      function buildFolderOverviewHtml(node, depth) {
+        let html = "";
+        const dashes = depth > 0 ? "-".repeat(depth * 2) + " " : "";
+        const fileDashes = "-".repeat((depth + 1) * 2) + " ";
+        html += "<p>" + dashes + "<strong>\u{1F4C1} " + escHtml(node.name) + "</strong></p>";
+        for (const f of node.files) html += "<p>" + fileDashes + "\u{1F4C4} " + escHtml(f.name) + " (" + fmtSize(f.size) + ")</p>";
+        for (const d of node.dirs) html += buildFolderOverviewHtml(d, depth + 1);
+        return html;
+      }
+
+      function escHtml(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+      async function ssrFetch(path, followRedirect = false) {
+        const jwt = S.jwt;
+        if (!jwt) throw new Error("JWT Token eingeben");
+        const h = { Authorization: "Bearer " + jwt };
+        if (followRedirect) h["X-Follow-Redirect"] = "true";
+        const r = await fetch("/proxy/nbc-ssr" + path, { headers: h, redirect: "manual" });
+        return r;
+      }
+
+      async function legacyScanDir(teamId, folderId, depth) {
+        if (depth > 15) return { name: "", files: [], dirs: [] };
+        let path = "/files/teams/" + teamId;
+        if (folderId) path += "/" + folderId;
+        log("Scanne Legacy: " + path);
+        const r = await ssrFetch(path, true);
+        if (!r.ok) throw new Error("SSR " + r.status + ": " + path);
+        const html = await r.text();
+        const parsed = parseLegacyFilePage(html);
+        const dirs = [];
+        for (const d of parsed.dirs) { const sub = await legacyScanDir(teamId, d.id, depth + 1); sub.name = d.name; dirs.push(sub); }
+        return { name: "", files: parsed.files, dirs };
+      }
+
+      function legacyCountFiles(node) { return node.files.length + node.dirs.reduce((s, d) => s + legacyCountFiles(d), 0); }
+      function legacyCountDirs(node) { return node.dirs.length + node.dirs.reduce((s, d) => s + legacyCountDirs(d), 0); }
+
+      function parseLegacyFilePage(html) {
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const files = [], dirs = [];
+        doc.querySelectorAll("button.folder.openfolder").forEach((btn) => {
+          const folderId = btn.getAttribute("data-folder-id");
+          const titleEl = btn.querySelector(".card-title-directory");
+          if (folderId && titleEl) dirs.push({ name: titleEl.textContent.trim(), id: folderId });
+        });
+        doc.querySelectorAll(".card.file").forEach((card) => {
+          files.push({
+            name: card.getAttribute("data-file-name") || "Unbekannt",
+            size: parseInt(card.getAttribute("data-file-size")) || null,
+            fileId: card.getAttribute("data-file-id"),
+            href: card.getAttribute("data-href"),
+            status: "pending",
+          });
+        });
+        return { files, dirs };
+      }
+
+      async function legacyDownloadFile(fileId, fileName) {
+        const r = await fetch("/proxy/nbc-ssr/files/file?download=true&file=" + fileId, {
+          headers: { Authorization: "Bearer " + S.jwt, "X-Follow-Redirect": "true" },
+        });
+        if (!r.ok) throw new Error("Download " + r.status + ": " + fileName);
+        return await r.blob();
+      }
+    </script>
+  </body>
+</html>
