@@ -36,3 +36,12 @@ There are no test, lint, or build commands. Deploy requires SSH access to the pr
 2. User pastes NBC JWT → `ensureNbcSetup()` extracts `schoolId`, creates room/board/column
 3. User browses NC files → `ncBrowse()` uses WebDAV PROPFIND; `loadNcFilesRecursive()` walks up to 15 levels
 4. Migrate → `startMigration()`: download from NC → create card → create file element → upload to Files Storage Service
+
+## Hierarchy mapping (source tree → NBC boards)
+
+The deep source tree is flattened to **two levels** (column → card) per board:
+
+- One board per source: `Nextcloud-Dateien` (from `ncTree`) and, if the selected NC folder name contains a 24‑hex team‑id, `Alte Dateienablage` (from `legacyTree` via `legacyScanDir`).
+- First column `Übersicht` holds an overview card with a rich-text rendering of the full nested tree (`createOverviewCard`).
+- Loose files at the root go into a `Hauptordner` column as a single card with a `fileFolder` element.
+- Each top-level subfolder becomes its own column. **All nested subfolders inside it become individual cards in that same column** (flattened by `processFolderFlat`), each with a `fileFolder` element holding its files. Folder depth is preserved in card titles and the overview card, not in the kanban layout.

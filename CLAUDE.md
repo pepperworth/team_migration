@@ -48,6 +48,21 @@ API helpers `nbcApi(path, opts)` (bearer JWT) and `ncApi(path, opts)` (Basic aut
 3. **Browse & select** — `ncBrowse()` uses WebDAV PROPFIND; `loadNcFilesRecursive()` walks up to 15 levels deep
 4. **Migrate** — `startMigration()` per file: download from NC → create card → create file element → upload to Files Storage Service
 
+### Hierarchy mapping (NC/legacy tree → NBC boards)
+
+The arbitrarily deep source tree is flattened to **2 levels** in NBC. Per migration source, one board is created in the target room:
+
+- **Board "Nextcloud-Dateien"** — built from the selected NC folder (`ncTree`).
+- **Board "Alte Dateienablage"** — only created if the selected NC folder name contains a 24‑hex team‑id; then `legacyScanDir()` fetches the old Schul-Cloud files-storage tree (`legacyTree`).
+
+Within each board:
+
+- **Spalte "Übersicht"** — first column, holds an overview card (`createOverviewCard`) titled `📋 <root>` with a rich-text rendering of the full source tree as a nested list.
+- **Spalte "Hauptordner"** — only if the root has loose files; one card with all root-level files attached via a single `fileFolder` element.
+- **Spalte `<top-level-dir>`** — one column per top-level subfolder of the root. Inside that column, **every nested subfolder becomes its own card** (flattened by `processFolderFlat()` recursion), titled with the subfolder's name. Files within a folder are attached to that folder's card via a `fileFolder` element (one upload target per card, see `uploadFolderCard`).
+
+Net effect: depth is preserved in card titles and the overview card's rich-text tree, but the kanban layout is always exactly two levels (column → card). Files only ever live on cards, never directly in columns.
+
 ### Authentication
 
 - **Nextcloud**: HTTP Basic (username + app password)
